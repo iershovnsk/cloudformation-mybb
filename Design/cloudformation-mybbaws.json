@@ -595,24 +595,26 @@
 
           "mybb-stack": {
             "packages": {
-              "curl": [],
-              "unzip": []
             },
             "sources": {
-              "/tmp/mybb": "http://resources.mybb.com/downloads/mybb_1806.zip"
+              "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
             },
             "files": {
-              "ami-ubuntu-install.sh": {
-                "content": ""
-              }
             },
             "commands": {
-
+              "install": {
+                "command": "",
+                "cwd": "/tmp/mybb",
+                "env": {
+                  "DBUsername": { "Ref": "DBUsername" },
+                  "DBPassword": { "Ref": "DBPassword" },
+                  "DBPort": { "Ref": "DBPort" }
+                }
+              }
             }
           },
 
           "cf-updates": {
-
             "files": {
               "/etc/cfn/cfn-hup.conf": {
                 "content": { "Fn::Join": ["", [

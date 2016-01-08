@@ -9,12 +9,3 @@
 # was tested on an Ubuntu AMI. Invoke from **this** working directory!
 #
 
-TEMPPATH=`mktemp -d`
-MYBBBASE="http://resources.mybb.com/downloads"
-MYBBFILE="mybb_1806.zip"
-
-pushd
-curl "$MYBBBASE/$MYBBFILE" -o "$MYBBFILE"
-
-
-rm -rf "$TEMPDIR"
