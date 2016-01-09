@@ -582,57 +582,22 @@
       "Metadata": {
         "Comment": "Install MyBB application with dependencies.",
         "AWS::CloudFormation::Init": {
+          "config": {
 
-          "configSets": {
-            "MainConfigSet": [ "HttpdConfig", "PhpConfig", "MybbConfig", "CfUpdateConfig" ]
-          },
-
-          "HttpdConfig": {
             "packages": {
               "yum": {
-                "httpd": []
-              }
-            }
-          },
-
-          "PhpConfig": {
-            "packages": {
-              "yum": {
+                "httpd": [],
                 "php": [],
                 "php-gd": [],
                 "php-mbstring": [],
-                "php-mysqlnd": []
-              }
-            }
-          },
-
-          "MybbConfig": {
-            "packages": {
-              "yum": {
+                "php-mysqlnd": [],
                 "mysql": []
               }
             },
+
             "sources": {
               "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
             },
-            "commands": {
-              "install": {
-                "command": "bash ./install.sh",
-                "cwd": "/tmp/mybb",
-                "env": {
-                  "MYBB_DOMAINNAME": { "Fn::GetAtt": [ "WWWBalancer", "DNSName" ] },
-                  "MYBB_ADMINEMAIL": { "Ref": "OperationalEMail" },
-                  "MYBB_DBNAME": { "Ref": "DBName" },
-                  "MYBB_DBUSERNAME": { "Ref": "DBUsername" },
-                  "MYBB_DBPASSWORD": { "Ref": "DBPassword" },
-                  "MYBB_DBHOSTNAME": { "Fn::GetAtt": [ "DBCluster", "Endpoint.Address" ] },
-                  "MYBB_DBPORT": { "Ref": "DBPort" }
-                }
-              }
-            }
-          },
-
-          "CfUpdateConfig": {
 
             "files": {
               "/etc/cfn/cfn-hup.conf": {
@@ -651,12 +616,27 @@
                   "triggers=post.update\n",
                   "path=Resources.WWWLaunchConfiguration.Metadata.AWS::CloudFormation::Init\n",
                   "action=/opt/aws/bin/cfn-init -v ",
-                  "   --configsets MainConfigSet",
                   "   --stack ", { "Ref": "AWS::StackName" },
                   "   --resource WWWLaunchConfiguration ",
                   "   --region ", { "Ref": "AWS::Region" }, "\n",
                   "runas=root\n"
                 ]]}
+              }
+            },
+
+            "commands": {
+              "install": {
+                "command": "/bin/bash ./install.sh",
+                "cwd": "/tmp/mybb/Source",
+                "env": {
+                  "MYBB_DOMAINNAME": { "Fn::GetAtt": [ "WWWBalancer", "DNSName" ] },
+                  "MYBB_ADMINEMAIL": { "Ref": "OperationalEMail" },
+                  "MYBB_DBNAME": { "Ref": "DBName" },
+                  "MYBB_DBUSERNAME": { "Ref": "DBUsername" },
+                  "MYBB_DBPASSWORD": { "Ref": "DBPassword" },
+                  "MYBB_DBHOSTNAME": { "Fn::GetAtt": [ "DBCluster", "Endpoint.Address" ] },
+                  "MYBB_DBPORT": { "Ref": "DBPort" }
+                }
               }
             },
 
@@ -693,7 +673,6 @@
           "yum update -y aws-cfn-bootstrap\n",
 
           "/opt/aws/bin/cfn-init -v ",
-          "   --configsets MainConfigSet",
           "   --stack ", { "Ref": "AWS::StackName" },
           "   --resource WWWLaunchConfiguration ",
           "   --region ", { "Ref": "AWS::Region" }, "\n",
