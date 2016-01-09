@@ -118,16 +118,16 @@
     },
 
     "WWWAMIByRegion": {
-      "us-east-1":      { "hvm64": "ami-0021766a" },
-      "us-west-1":      { "hvm64": "ami-56f59e36" },
-      "us-west-2":      { "hvm64": "ami-c94856a8" },
-      "eu-west-1":      { "hvm64": "ami-a11dbfd2" },
-      "eu-central-1":   { "hvm64": "ami-ffaab693" },
-      "ap-northeast-1": { "hvm64": "ami-20b98c4e" },
-      "ap-southeast-1": { "hvm64": "ami-06834165" },
-      "ap-southeast-2": { "hvm64": "ami-7bbee518" },
-      "sa-east-1":      { "hvm64": "ami-08bd3a64" },
-      "cn-north-1":     { "hvm64": "ami-3378b15e" }
+      "us-east-1":      { "hvm64": "ami-60b6c60a" },
+      "us-west-1":      { "hvm64": "ami-d5ea86b5" },
+      "us-west-2":      { "hvm64": "ami-f0091d91" },
+      "eu-west-1":      { "hvm64": "ami-bff32ccc" },
+      "eu-central-1":   { "hvm64": "ami-bc5b48d0" },
+      "ap-northeast-1": { "hvm64": "ami-383c1956" },
+      "ap-southeast-1": { "hvm64": "ami-c9b572aa" },
+      "ap-southeast-2": { "hvm64": "ami-48d38c2b" },
+      "sa-east-1":      { "hvm64": "ami-6817af04" },
+      "cn-north-1":     { "hvm64": "ami-43a36a2e" }
     },
 
     "ELBAccountIdByRegion": {
@@ -582,31 +582,35 @@
       "Metadata": {
         "Comment": "Install MyBB application with dependencies.",
         "AWS::CloudFormation::Init": {
+
           "configSets": {
-            "MainConfigSet": [ "Apache2Config", "Php5Config", "MybbConfig", "CfUpdateConfig" ]
+            "MainConfigSet": [ "HttpdConfig", "PhpConfig", "MybbConfig", "CfUpdateConfig" ]
           },
 
-          "Apache2Config": {
+          "HttpdConfig": {
             "packages": {
-              "apt": {
-                "apache2": []
+              "yum": {
+                "httpd": []
               }
             }
           },
 
-          "Php5Config": {
+          "PhpConfig": {
             "packages": {
-              "apt": {
-                "libapache2-mod-php5": [],
-                "php5-gd": [],
-                "php5-mysqlnd": []
+              "yum": {
+                "php": [],
+                "php-gd": [],
+                "php-mbstring": [],
+                "php-mysqlnd": []
               }
             }
           },
 
           "MybbConfig": {
             "packages": {
-              "mysql-client": []
+              "yum": {
+                "mysql": []
+              }
             },
             "sources": {
               "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
@@ -629,6 +633,7 @@
           },
 
           "CfUpdateConfig": {
+
             "files": {
               "/etc/cfn/cfn-hup.conf": {
                 "content": { "Fn::Join": ["", [
@@ -645,7 +650,7 @@
                   "[cfn-auto-reloader-hook]\n",
                   "triggers=post.update\n",
                   "path=Resources.WWWLaunchConfiguration.Metadata.AWS::CloudFormation::Init\n",
-                  "action=cfn-init -v ",
+                  "action=/opt/aws/bin/cfn-init -v ",
                   "   --configsets MainConfigSet",
                   "   --stack ", { "Ref": "AWS::StackName" },
                   "   --resource WWWLaunchConfiguration ",
@@ -685,17 +690,15 @@
         "ImageId": { "Fn::FindInMap": [ "WWWAMIByRegion", { "Ref": "AWS::Region" }, "hvm64" ] },
         "UserData": { "Fn::Base64": { "Fn::Join": ["", [
           "#!/bin/bash -xe\n",
+          "yum update -y aws-cfn-bootstrap\n",
 
-          "apt-get -y install python-pip\n",
-          "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
-
-          "cfn-init -v ",
+          "/opt/aws/bin/cfn-init -v ",
           "   --configsets MainConfigSet",
           "   --stack ", { "Ref": "AWS::StackName" },
           "   --resource WWWLaunchConfiguration ",
           "   --region ", { "Ref": "AWS::Region" }, "\n",
 
-          "cfn-signal -e $? ",
+          "/opt/aws/bin/cfn-signal -e $? ",
           "   --stack ", { "Ref": "AWS::StackName" },
           "   --resource WWWAutoScalingGroup ",
           "   --region ", { "Ref": "AWS::Region" }, "\n"
