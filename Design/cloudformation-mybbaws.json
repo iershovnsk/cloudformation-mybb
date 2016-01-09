@@ -38,6 +38,16 @@
       "ConstraintDescription": "Must be a valid EC2 instance type!"
     },
 
+    "DBName": {
+      "Type": "String",
+      "Description": "The name for the MyBB database.",
+      "MinLength": "4",
+      "MaxLength": "20",
+      "Default": "mybb",
+      "AllowedPattern": "^[a-zA-Z0-9_]+$",
+      "ConstraintDescription": "Must be a valid database name!"
+    },
+
     "DBUsername": {
       "Type": "String",
       "Description": "The username for the MyBB database.",
@@ -342,6 +352,7 @@
       "Type": "AWS::RDS::DBCluster",
       "Properties": {
         "Engine": "aurora",
+        "DatabaseName": { "Ref": "DBName" },
         "MasterUsername": { "Ref": "DBUsername" },
         "MasterUserPassword": { "Ref": "DBPassword" },
         "Port": { "Ref": "DBPort" },
@@ -572,10 +583,10 @@
         "Comment": "Install MyBB application with dependencies.",
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "all-stacks": [ "apache2-stack", "php5-stack", "mybb-stack", "cf-updates" ]
+            "MainConfigSet": [ "Apache2Config", "Php5Config", "MybbConfig", "CfUpdateConfig" ]
           },
 
-          "apache2-stack": {
+          "Apache2Config": {
             "packages": {
               "apt": {
                 "apache2": []
@@ -583,7 +594,7 @@
             }
           },
 
-          "php5-stack": {
+          "Php5Config": {
             "packages": {
               "apt": {
                 "libapache2-mod-php5": [],
@@ -593,28 +604,31 @@
             }
           },
 
-          "mybb-stack": {
+          "MybbConfig": {
             "packages": {
+              "mysql-client": []
             },
             "sources": {
               "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
             },
-            "files": {
-            },
             "commands": {
               "install": {
-                "command": "",
+                "command": "bash ./install.sh",
                 "cwd": "/tmp/mybb",
                 "env": {
-                  "DBUsername": { "Ref": "DBUsername" },
-                  "DBPassword": { "Ref": "DBPassword" },
-                  "DBPort": { "Ref": "DBPort" }
+                  "MYBB_DOMAINNAME": { "Fn::GetAtt": [ "WWWBalancer", "DNSName" ] },
+                  "MYBB_ADMINEMAIL": { "Ref": "OperationalEMail" },
+                  "MYBB_DBNAME": { "Ref": "DBName" },
+                  "MYBB_DBUSERNAME": { "Ref": "DBUsername" },
+                  "MYBB_DBPASSWORD": { "Ref": "DBPassword" },
+                  "MYBB_DBHOSTNAME": { "Fn::GetAtt": [ "DBCluster", "Endpoint.Address" ] },
+                  "MYBB_DBPORT": { "Ref": "DBPort" }
                 }
               }
             }
           },
 
-          "cf-updates": {
+          "CfUpdateConfig": {
             "files": {
               "/etc/cfn/cfn-hup.conf": {
                 "content": { "Fn::Join": ["", [
@@ -632,6 +646,7 @@
                   "triggers=post.update\n",
                   "path=Resources.WWWLaunchConfiguration.Metadata.AWS::CloudFormation::Init\n",
                   "action=/opt/aws/bin/cfn-init -v ",
+                  "         --configsets MainConfigSet",
                   "         --stack ", { "Ref": "AWS::StackName" },
                   "         --resource WWWLaunchConfiguration ",
                   "         --region ", { "Ref": "AWS::Region" }, "\n",
@@ -675,6 +690,7 @@
           "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
 
           "/opt/aws/bin/cfn-init -v ",
+          "         --configsets MainConfigSet",
           "         --stack ", { "Ref": "AWS::StackName" },
           "         --resource WWWLaunchConfiguration ",
           "         --region ", { "Ref": "AWS::Region" }, "\n",

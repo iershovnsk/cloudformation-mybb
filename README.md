@@ -139,3 +139,7 @@ should be done by secondary users with explicitly defined permissions.
 ## Evaluation Access
 
 (TODO) Observer account.
+
+- MyBB application Administrator Account:
+    - Username: admin
+    - Password: 1234
