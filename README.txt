@@ -1,5 +1,9 @@
 # MyBBAWS Infrastructure
 
+#                                   
+#  NOTE: Please see the fixed video clip in the Video folder! 
+#                                                             
+
 ## Overview
 
 This is a **complete AWS CloudFormation template** (along with additional required source codes
