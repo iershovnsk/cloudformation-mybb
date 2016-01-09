@@ -90,6 +90,14 @@
       "Default": "0.0.0.0/0",
       "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription": "Must be a valid bitmasked IP range (e.g. x.x.x.x/x)!"
+    },
+
+    "BillingThreshold": {
+      "Type": "Number",
+      "Description": "Notify when the costs exceed this amount in USD.",
+      "MinValue": 1,
+      "Default": 1000,
+      "ConstraintDescription": "Must be a valid USD amount (minimum 1)!"
     }
 
   },
@@ -680,6 +688,33 @@
           "   --resource WWWAutoScalingGroup ",
           "   --region ", { "Ref": "AWS::Region" }, "\n"
         ]]}}
+      }
+    },
+
+    "BillingAllarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": { "Fn::Join": ["", [
+          "Alarm if costs exceed USD ",
+          { "Ref": "BillingThreshold" }
+        ]]},
+        "Namespace": "AWS/Billing",
+        "MetricName": "EstimatedCharges",
+        "Dimensions": [{
+          "Name": "Currency",
+          "Value": "USD"
+        }],
+        "Statistic": "Maximum",
+        "Period": "21600",
+        "EvaluationPeriods": "1",
+        "Threshold": { "Ref": "BillingThreshold" },
+        "ComparisonOperator": "GreaterThanThreshold",
+        "AlarmActions": [{
+          "Ref": "NotificationTopic"
+        }],
+        "InsufficientDataActions": [{
+          "Ref": "NotificationTopic"
+        }]
       }
     }
 
