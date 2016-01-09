@@ -89,52 +89,42 @@ This is only an initial version of the automation template, which what I could b
 constraints I had, and so there are a few aspects in which this work could (and probably should) be
 improved before actually going live with it:
 
+- **Split template** into two separate stacks, database and web service.
+
+- **Tag everything**.
+
 - The automation template (along with this documentation) are revision-controlled on a public
 **GitHub repository**; this repository is also used (for simplicity) to host the Bash installation
 script for MyBB 1.8.6 (including MyBB sources). It would be preferable that this would be turned
 into a new AMI instance.
 
 - **Availability-Zones**: For increased availability subnets should be created in all availability
-zones; currently I only created two per zone (private/public).
+zones; currently I only targeted two AZs.
 
-- **Network ACLs**: In addition to the security groups defined, I should have also defined a set of
-NetworkAcl entries to control traffic at subnet-level as an additional level of security.
+- Define **Network ACLs** for subnets.
 
 - **Remove Public IPs in PublicSubnets**: Currently I set "MapPublicIpOnLaunch" to true on public
-subnets for a quick way to debug the launch configuration; this should not be required in
-production.
+subnets for a quick way to debug the launch configuration; a bastion server should be used.
 
-- **Outbound access for DB servers via NAT**: It could be useful to allow outbound access to the
-Internet for the machines residing in the private subnet of the VPC (for updates and such); in that
-case the isolated nodes could be configured to use a **NAT Gateway** placed in the public subnet.
+- **Outbound access for DB servers via NAT** (optional): It could be useful to allow outbound
+access to the Internet for the machines residing in the private subnet of the VPC (for updates and
+such) by using a **NAT Gateway**.
 
-- **Stack update policies**: The automation template also does not contain update policies which
-enforce controlled stack updates by ensuring critical resources will not experience downtimes. Such
-rules should normally be defined.
+- Define clear **Stack update and delete policies** to avoid downtimes during updates and to retain data (logs, databases etc.) after stack operations.
 
-- **Time-related cost optimizations**: No effort has been put into making the resource allocation
-strategy be aware of the user traffic habits in specific time zones. Such rules could be added so
-that resource allocation (and thus costs) are reduced during low traffic hours. Currently, the
-Auto-Scaling Groups resize solely based on CloudWatch performance metrics.
+- **Time-based scaling**: Currently, the Auto-Scaling Groups resize solely based on CloudWatch
+performance metrics; rules for timed scaling could be defined to optimize costs.
 
 - **Track CloudFormation calls via CloudTrail**: For additional security and as a measure of
 historical reference, CloudTrail should be used to log all CloudFormation API calls into a selected
 S3 bucket. The benefit is good and the costs should be negligible.
 
 - **Restrict SSH access**: By default the "SSHAllowedSources" parameter is set to "0.0.0.0/0" to
-allow any SSH connections to the nodes from any public IP address; in a normal production
-environment this setting should be considerably more restrictive.
+allow any SSH connections to the nodes from any public IP address; this setting should be
+considerably more restrictive.
 
-- **HTTP Basic Auth**: An extra layer of protection (though not very strong) could be added by
-enablind HTTP Basic Auth for the MyBB Admin Panel.
-
-- **HTTPS support**: Some modifications should pe made to the automation template so that the
-application can be accessed via HTTPS and even redirects HTTP:// requests (using HTTP 301) to
-the HTTPS:// endpoint for better security/privacy (currently only the security groups have been
-configured to allow access on port 443 - i.e. HTTPS).
-
-- **IAM Users**: Direct **root** credentials were used for this template; normally everything
-should be done by secondary users with explicitly defined permissions.
+- **HTTPS support**: For a production environment I would enable HTTPS support and even try to
+force traffic through it (redirect via HTTP 301).
 
 ## Evaluation Access
 
