@@ -12,6 +12,9 @@ will be used.
 the AWS-generated DNSName of the main (WWW) load balancer and a CNAME record should be defined to
 point to this name.
 
+- Prior to the launch of this template into a stack, you will have to create an EC2 KeyPair in
+the AWS account (for SSH access).
+
 ## Completion overview
 
 Layer                  | Scalability | Availability | Security | Monitoring | Automation
@@ -122,6 +125,9 @@ S3 bucket. The benefit is good and the costs should be negligible.
 - **Restrict SSH access**: By default the "SSHAllowedSources" parameter is set to "0.0.0.0/0" to
 allow any SSH connections to the nodes from any public IP address; this setting should be
 considerably more restrictive.
+
+- **Add CNAME parameter** to the template so that the MyBB code will use the custom domain name
+instead of the public endpoint generated for the AWS balancer.
 
 - **HTTPS support**: For a production environment I would enable HTTPS support and even try to
 force traffic through it (redirect via HTTP 301).

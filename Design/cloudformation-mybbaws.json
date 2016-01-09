@@ -62,9 +62,9 @@
       "Type": "String",
       "Description": "The password for the MyBB database.",
       "NoEcho": true,
-      "MinLength": "6",
-      "MaxLength": "18",
-      "ConstraintDescription": "Must be a valid database password!"
+      "MinLength": "8",
+      "MaxLength": "64",
+      "ConstraintDescription": "Must be a valid database password (length [8 - 64] characters)!"
     },
 
     "DBPort": {
@@ -405,7 +405,8 @@
     },
 
     "S3LogBucket": {
-      "Type": "AWS::S3::Bucket"
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain"
     },
     "S3LogBucketPolicy": {
       "Type": "AWS::S3::BucketPolicy",
