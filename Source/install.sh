@@ -50,7 +50,7 @@ sed -e "s/MYBB_ADMINEMAIL/${MYBB_ADMINEMAIL}/g" \
 
 # Set proper ownership and permissions.
 cd "$TARGET"
-chown www-data:www-data *
+# chown www-data:www-data *
 chmod 666 inc/config.php inc/settings.php
 chmod 666 inc/languages/english/*.php inc/languages/english/admin/*.php
 
