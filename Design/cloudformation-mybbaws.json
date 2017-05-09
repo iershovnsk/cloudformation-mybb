@@ -8,7 +8,7 @@
     "OperationalEMail": {
       "Type": "String",
       "Description": "Scaling-related and other notifications will be sent to this EMail address.",
-      "Default": "mybbaws@gmail.com",
+      "Default": "iershov.nsk@gmail.com",
       "AllowedPattern": "\\w[a-zA-Z0-9_\\-\\.]*@\\w[a-zA-Z0-9\\-\\.]*",
       "ConstraintDescription": "Must be a valid email address!"
     },
@@ -16,7 +16,7 @@
     "WWWInstanceType": {
       "Type": "String",
       "Description": "The type of EC2 instance to launch for the WWW (web-servers) tier.",
-      "Default": "t2.medium",
+      "Default": "t2.micro",
       "AllowedValues": [ "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge" ],
       "ConstraintDescription": "Must be a valid EC2 instance type!"
     },
@@ -33,8 +33,8 @@
     "DBInstanceClass": {
       "Type": "String",
       "Description": "The class of RDS instance to launch for the DB (database) tier.",
-      "Default": "db.r3.large",
-      "AllowedValues": [ "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge" ],
+      "Default": "db.t2.micro",
+      "AllowedValues": [ "db.t2.micro","db.t2.small","db.t2.medium", "db.t2.large" ],
       "ConstraintDescription": "Must be a valid EC2 instance type!"
     },
 
@@ -90,15 +90,8 @@
       "Default": "0.0.0.0/0",
       "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription": "Must be a valid bitmasked IP range (e.g. x.x.x.x/x)!"
-    },
-
-    "BillingThreshold": {
-      "Type": "Number",
-      "Description": "Notify when the costs exceed this amount in USD.",
-      "MinValue": 1,
-      "Default": 1000,
-      "ConstraintDescription": "Must be a valid USD amount (minimum 1)!"
     }
+
 
   },
 
@@ -305,6 +298,22 @@
       }
     },
 
+    "MountTargetSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "GroupDescription": "Security group for mount target",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "2049",
+            "ToPort": "2049",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+
     "PublicRouteTable": {
       "Type": "AWS::EC2::RouteTable",
       "Properties": {
@@ -356,49 +365,31 @@
       }
     },
 
-    "DBCluster": {
-      "Type": "AWS::RDS::DBCluster",
-      "Properties": {
-        "Engine": "aurora",
-        "DatabaseName": { "Ref": "DBName" },
-        "MasterUsername": { "Ref": "DBUsername" },
-        "MasterUserPassword": { "Ref": "DBPassword" },
-        "Port": { "Ref": "DBPort" },
-        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
-        "VpcSecurityGroupIds": [
-          { "Ref": "HiddenSecurityGroup" }
-        ]
-      }
-    },
     "DBSubnetGroup": {
       "Type": "AWS::RDS::DBSubnetGroup",
       "Properties": {
         "DBSubnetGroupDescription": "This is the group of (private) subnets used by the RDS DB.",
         "SubnetIds": [
-          { "Ref": "HiddenSubnetA" },
+          { "Ref": "HiddenSubnetA" }, 
           { "Ref": "HiddenSubnetB" }
         ]
       }
     },
-    "DBInstanceA": {
+    "DBInstance": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "Engine": "aurora",
+        "Engine": "mysql",
+        "AllocatedStorage":  10,
         "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
-        "DBClusterIdentifier": { "Ref": "DBCluster" },
-        "AvailabilityZone": { "Fn::GetAtt": [ "HiddenSubnetA", "AvailabilityZone" ] },
-        "DBInstanceClass": { "Ref": "DBInstanceClass" },
-        "PubliclyAccessible": false
-      }
-    },
-    "DBInstanceB": {
-      "Type": "AWS::RDS::DBInstance",
-      "Properties": {
-        "Engine": "aurora",
-        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
-        "DBClusterIdentifier": { "Ref": "DBCluster" },
+        "DBInstanceIdentifier": "myBB-database" ,
         "AvailabilityZone": { "Fn::GetAtt": [ "HiddenSubnetB", "AvailabilityZone" ] },
         "DBInstanceClass": { "Ref": "DBInstanceClass" },
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "HiddenSecurityGroup", "GroupId" ] } ],
+        "MasterUsername": { "Ref": "DBUsername" },
+        "MasterUserPassword": { "Ref": "DBPassword" },
+        "DBName": { "Ref": "DBName" },
+        "MultiAZ": false,
+        "Port": { "Ref": "DBPort" },
         "PubliclyAccessible": false
       }
     },
@@ -471,6 +462,36 @@
       }
     },
 
+    "FileSystem": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "PerformanceMode": "generalPurpose",
+        "FileSystemTags": [
+          {
+            "Key": "Name",
+            "Value": "myBB-uploads"
+          }
+        ]
+      }
+    },
+    "MountTargetA": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "FileSystem" },
+        "SubnetId": { "Ref": "PublicSubnetA" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]        
+      }
+    },
+    "MountTargetB": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "FileSystem" },
+        "SubnetId": { "Ref": "PublicSubnetB" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]        
+      }
+    },
+
+
     "WWWAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
@@ -484,7 +505,7 @@
         "HealthCheckType": "ELB",
         "HealthCheckGracePeriod": 120,
         "MinSize": 1,
-        "MaxSize": 1000,
+        "MaxSize": 2,
         "DesiredCapacity": { "Ref": "WWWTargetCount" },
         "LaunchConfigurationName": { "Ref": "WWWLaunchConfiguration" },
         "MetricsCollection": [
@@ -597,12 +618,13 @@
                 "php-gd": [],
                 "php-mbstring": [],
                 "php-mysqlnd": [],
-                "mysql": []
+                "mysql": [],
+                "nfs-utils": []
               }
             },
 
             "sources": {
-              "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
+              "/tmp/mybb": "https://github.com/iershovnsk/cloudformation-mybb/tarball/master"
             },
 
             "files": {
@@ -640,8 +662,10 @@
                   "MYBB_DBNAME": { "Ref": "DBName" },
                   "MYBB_DBUSERNAME": { "Ref": "DBUsername" },
                   "MYBB_DBPASSWORD": { "Ref": "DBPassword" },
-                  "MYBB_DBHOSTNAME": { "Fn::GetAtt": [ "DBCluster", "Endpoint.Address" ] },
-                  "MYBB_DBPORT": { "Ref": "DBPort" }
+                  "MYBB_DBHOSTNAME": { "Fn::GetAtt": [ "DBInstance", "Endpoint.Address" ] },
+                  "MYBB_DBPORT": { "Ref": "DBPort" },
+                  "MYBB_REGION": { "Ref": "AWS::Region" },
+                  "MYBB_FILESYSTEM": { "Ref": "FileSystem" }
                 }
               }
             },
@@ -688,33 +712,6 @@
           "   --resource WWWAutoScalingGroup ",
           "   --region ", { "Ref": "AWS::Region" }, "\n"
         ]]}}
-      }
-    },
-
-    "BillingAllarm": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "AlarmDescription": { "Fn::Join": ["", [
-          "Alarm if costs exceed USD ",
-          { "Ref": "BillingThreshold" }
-        ]]},
-        "Namespace": "AWS/Billing",
-        "MetricName": "EstimatedCharges",
-        "Dimensions": [{
-          "Name": "Currency",
-          "Value": "USD"
-        }],
-        "Statistic": "Maximum",
-        "Period": "21600",
-        "EvaluationPeriods": "1",
-        "Threshold": { "Ref": "BillingThreshold" },
-        "ComparisonOperator": "GreaterThanThreshold",
-        "AlarmActions": [{
-          "Ref": "NotificationTopic"
-        }],
-        "InsufficientDataActions": [{
-          "Ref": "NotificationTopic"
-        }]
       }
     }
 
