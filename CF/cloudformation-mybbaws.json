@@ -213,12 +213,12 @@
         "CidrBlock": { "Fn::FindInMap": [ "Subnets", "HiddenSubnetB", "CidrBlock" ] }
       }
     },
-
-    "PublicSecurityGroup": {
+    
+    "ELBWWWSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": { "Ref": "VPC" },
-        "GroupDescription": "Internet-facing security group, mainly for web servers.",
+        "GroupDescription": "Internet-facing security group for the ELB",
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
@@ -228,6 +228,41 @@
           },
           {
             "CidrIp": "0.0.0.0/0",
+            "FromPort": 443,
+            "ToPort": 443,
+            "IpProtocol": "tcp"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 80,
+            "ToPort": 80,
+            "IpProtocol": "tcp"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 443,
+            "ToPort": 443,
+            "IpProtocol": "tcp"
+          }
+        ]
+      }
+    },
+    "PublicSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "GroupDescription": "Internet-facing security group, mainly for web servers.",
+        "SecurityGroupIngress": [
+          {
+            "SourceSecurityGroupId": { "Fn::GetAtt": [ "ELBWWWSecurityGroup", "GroupId" ] },
+            "FromPort": 80,
+            "ToPort": 80,
+            "IpProtocol": "tcp"
+          },
+          {
+            "SourceSecurityGroupId": { "Fn::GetAtt": [ "ELBWWWSecurityGroup", "GroupId" ] },
             "FromPort": 443,
             "ToPort": 443,
             "IpProtocol": "tcp"
@@ -439,7 +474,7 @@
         "Scheme": "internet-facing",
         "CrossZone": true,
         "SecurityGroups": [
-          { "Ref": "PublicSecurityGroup" }
+          { "Ref": "ELBWWWSecurityGroup" }
         ],
         "Subnets": [
           { "Ref": "PublicSubnetA" },

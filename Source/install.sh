@@ -52,14 +52,12 @@ sed -e "s/MYBB_ADMINEMAIL/${MYBB_ADMINEMAIL}/g" \
 
 # Set proper ownership and permissions.
 cd "$TARGET"
-# chown www-data:www-data *
 chmod 666 inc/config.php inc/settings.php
 chmod 666 inc/languages/english/*.php inc/languages/english/admin/*.php
 
-# TODO: The "uploads/" path should be mounted on an S3 bucket.
 mkdir -p ${TARGET}/uploads
 mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${MYBB_FILESYSTEM}.efs.${MYBB_REGION}.amazonaws.com:/ ${TARGET}/uploads
-chown -R apache:apache ${TARGET}/
 mkdir -p uploads/avatars
+chown -R apache:apache ${TARGET}/
 chmod 777 cache/ cache/themes/ admin/backups/
 chmod 777 uploads/ uploads/avatars/
