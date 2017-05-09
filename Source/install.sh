@@ -58,8 +58,8 @@ chmod 666 inc/languages/english/*.php inc/languages/english/admin/*.php
 
 # TODO: The "uploads/" path should be mounted on an S3 bucket.
 mkdir -p ${TARGET}/uploads
-mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${MYBB_FILESYSTEM}.efs.${MYBB_REGION}.amazonaws.com:/ ${TARGET}/uploads
+#mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${MYBB_FILESYSTEM}.efs.${MYBB_REGION}.amazonaws.com:/ ${TARGET}/uploads
 #chown  uploads/
 mkdir -p ${TARGET}/uploads/avatars
-chmod 777 cache/ cache/themes/ uploads/ uploads/avatars/
-chmod 777 cache/ cache/themes/ uploads/ uploads/avatars/ admin/backups/
+chmod 777 cache/ cache/themes/ admin/backups/
+#chown 777 uploads/ uploads/avatars/
