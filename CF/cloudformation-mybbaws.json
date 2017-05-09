@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "CloudFormation automation template which launches an auto-scaling infrastructure for running the MyBB application version 1.8.6. The infrastructure deploys workers over multiple availability zones within a single region (for now).",
+  "Description": "CloudFormation automation template which launches an auto-scaling infrastructure for running the MyBB application version 1.8.6. The infrastructure deploys workers over multiple availability zones within a single region and EFS for distributed file storage.",
 
   "Parameters": {
 
