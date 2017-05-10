@@ -40,8 +40,16 @@ sed -e "s/MYBB_DBNAME/${MYBB_DBNAME}/g" \
     -e "s/MYBB_DBPORT/${MYBB_DBPORT}/g" \
     "${CONFIG}/config.php" > "${TARGET}/inc/config.php"
 
-# Initialize database.
-sed -e "s/MYBB_ADMINEMAIL/${MYBB_ADMINEMAIL}/g" \
+# Initialize database if it is empty.
+
+tables=`mysql --user=${MYBB_DBUSERNAME} \
+        --password=${MYBB_DBPASSWORD} \
+        --host=${MYBB_DBHOSTNAME} \
+        --port=${MYBB_DBPORT} \
+        -s --skip-column-names -e "SELECT COUNT(DISTINCT table_name) FROM information_schema.columns WHERE table_schema = '${MYBB_DBNAME}'"`
+
+if [[ $tables -eq 0 ]]; then
+  sed -e "s/MYBB_ADMINEMAIL/${MYBB_ADMINEMAIL}/g" \
     -e "s/MYBB_DOMAINNAME/${MYBB_DOMAINNAME}/g" \
     "${CONFIG}/mybb.sql" | mysql \
     --user="$MYBB_DBUSERNAME" \
@@ -49,6 +57,10 @@ sed -e "s/MYBB_ADMINEMAIL/${MYBB_ADMINEMAIL}/g" \
     --host="$MYBB_DBHOSTNAME" \
     --port="$MYBB_DBPORT" \
     --database="$MYBB_DBNAME" || echo "WE ASSUME DATA ALREADY EXISTS!"
+else
+  echo "$MYBB_DBNAME is not empty, skipping initialization..."
+fi
+
 
 # Set proper ownership and permissions.
 cd "$TARGET"

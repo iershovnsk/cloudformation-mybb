@@ -349,7 +349,7 @@
             "IpProtocol": "tcp",
             "FromPort": "2049",
             "ToPort": "2049",
-            "CidrIp": "0.0.0.0/0"
+            "SourceSecurityGroupId": { "Fn::GetAtt": [ "PublicSecurityGroup", "GroupId" ] },
           }
         ]
       }
